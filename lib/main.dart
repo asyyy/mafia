@@ -6,7 +6,7 @@ import 'globals.dart' as globals;
 void main() async{
   globals.token = '';
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeRight]);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]);
   runApp(const MyApp());
 }
 

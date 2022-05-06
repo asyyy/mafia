@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:projet_groupe_c/assets/constants.dart';
 import 'package:projet_groupe_c/model/disasterCode.dart';
 import 'dart:developer';
+import 'package:projet_groupe_c/services/geoloc_services.dart';
 
 ///
 /// Widget that allows create new intervention
@@ -28,58 +29,22 @@ class NewInterventionPage extends StatefulWidget {
 
 class _NewInterventionPageState extends State<NewInterventionPage> {
 
-  late final MapController mapController;
-  late final LatLng geoPointIntervention;
+  late MapController mapController;
 
-  late final int formProportion = 60;
+  final int formProportion = 60;
 
   DisasterCodeModel inc = DisasterCodeModel(
       code: disasterCode["inc"], color: const Color(0xFFFF0000));
   DisasterCodeModel sap = DisasterCodeModel(
       code: disasterCode["sap"], color: const Color(0xFF00FF00));
 
-  @override
-  void initState() {
-    super.initState();
-    mapController = MapController();
-  }
-
-  void _handleTap(TapPosition tapPosition, LatLng latlng) {
-    this.geoPointIntervention = latlng;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Flex(
-        direction: Axis.horizontal,
-        children: [
-          Flexible(
-            flex: formProportion,
-            fit: FlexFit.tight,
-            child: FormWidget(),
-          ),
-          Flexible(
-            flex: 100 - formProportion,
-            child: MapWidget(),
-          )
-        ]
-    );
-  }
-}
-
-class FormWidget extends StatefulWidget {
-  const FormWidget({Key? key}) : super(key: key);
-
-  @override
-  FormWidgetState createState() => FormWidgetState();
-}
-
-class FormWidgetState extends State<FormWidget> {
   final _formKey = GlobalKey<FormState>();
-
+  late Marker marker;
+  bool isMarked = false;
   final Map<String, String> textFieldsValue = {};
 
-  List<DropdownMenuItem<int>> disasterCodeList = []; //Disaster Code List
+  List<DropdownMenuItem<int>> disasterCodeList = [];
+  List<DisasterCodeModel> disasterModelList = [];//Disaster Code List
 
   List<VehiclesUtils> vehicles = [
     VehiclesUtils(acronym: 'VL', nbOfUnit: 0),
@@ -90,28 +55,142 @@ class FormWidgetState extends State<FormWidget> {
     VehiclesUtils(acronym: 'VLCG', nbOfUnit: 0),
   ];
 
+  double latitude = 48.117266;
+  double longitude = -1.6777926;
+
+  TextEditingController addressControler = TextEditingController();
+  FocusNode textLabelFieldFocusNode = FocusNode();
+  FocusNode textAddressFieldFocusNode = FocusNode();
+  bool canCleartextFieldError = false;
+
+  //FormField + vehiclesnbOfUnit
+  int _selectedDisasterCode = 0;
+  String addressFormField = "";
+  String labelFormField = "";
+  LatLng positionFormField = LatLng(48.117266, -1.6777926);
+
+  @override
+  void initState() {
+    mapController = MapController();
+    addListener();
+    disasterModelList = [sap, inc];
+    super.initState();
+  }
+
+  addListener() {
+    textLabelFieldFocusNode.addListener(() {
+      setState(() {
+        canCleartextFieldError = textLabelFieldFocusNode.hasFocus;
+      });
+    });
+    textAddressFieldFocusNode.addListener(() {
+      setState(() {
+        canCleartextFieldError = textAddressFieldFocusNode.hasFocus;
+      });
+    });
+  }
+
+  submitForm() {
+    print('label : ' + labelFormField);
+    print('Code Sinistre : ' + disasterModelList[_selectedDisasterCode].code.toString());
+    print('addresse : ' + addressFormField);
+    print('latitute : ' + positionFormField.latitude.toString());
+    print('longitude : ' + positionFormField.longitude.toString());
+    vehicles.forEach((element) {
+      if(element.nbOfUnit > 0) {
+        print(
+            'vehicles ' + element.acronym + ', ' + element.nbOfUnit.toString() +
+                ' needed');
+      }
+    });
+    print('startDate ' + DateTime.now().toString());
+    print('images []');
+  }
+
   void _loadDisasterCode() {
     disasterCodeList = [];
     disasterCodeList.add(const DropdownMenuItem(
-      child: Text('SAP'),
+      child: Text('SAP', style: TextStyle(color: Colors.green)),
       value: 0,
     ));
     disasterCodeList.add(const DropdownMenuItem(
-      child: Text('INC'),
+      child: Text('INC', style: TextStyle(color: Colors.red)),
       value: 1,
     ));
   }
 
-  //FormField
-  int _selectedDisasterCode = 0;
+  _getPosition() {
+    GeoLoc.getLocationFromAddress(addressFormField).then((response)    {
+      if( response == null ) {
+        addressFormField = "";
+        isMarked = false;
+      }
+      if(response != null) {
+        latitude = response.latitude;
+        longitude = response.longitude;
+      }
+      positionFormField = LatLng(latitude, longitude);
+         setState(() {
+           if(response != null) {
+             print(response);
+             mapController.move(positionFormField, 15);
+             marker = getMarker();
+           }
+       });
+    });
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    _loadDisasterCode();
+  _getColorMarker() {
+    if(addressFormField == "") {
+      return const Color.fromARGB(0, 0, 0, 0);
+    }
+    switch(_selectedDisasterCode) {
+      case 0:
+        return Colors.green;
+      case 1:
+        return Colors.red;
+      default:
+        return const Color.fromARGB(0, 0, 0, 0);
+    }
+  }
 
+  void _handleTap(TapPosition tapPosition, LatLng latlng) {
+    if(!isMarked) {
+      return;
+    }
+    positionFormField = latlng;
+      marker = getMarker();
+      setState(() {
+
+      });
+  }
+
+  getMarker() {
+    isMarked = true;
+    return Marker(point: positionFormField, builder: (BuildContext context) =>
+        Icon(
+          Icons.location_on,
+          color: _getColorMarker(),
+          size: 35.0,
+        )
+    );
+
+  }
+
+  _isSubmitButtonDisabled() {
+    bool vehiclesExist = vehicles.any((element) =>
+      element.nbOfUnit > 0 ? true : false
+    );
+    return !(isMarked && labelFormField.isNotEmpty && vehiclesExist);
+  }
+
+
+
+  Widget getFormWidget() {
     return Container(
         color: Colors.white,
         child: Form(
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             key: _formKey,
             child: Container(
                 child: Card(
@@ -122,146 +201,6 @@ class FormWidgetState extends State<FormWidget> {
                               padding: const EdgeInsets.all(16)
                           ),
                           Text("Nouvelle Intervention"),
-                          const Padding(
-                            padding: const EdgeInsets.all(8)
-                          ),
-                          Flex(
-                            direction: Axis.horizontal,
-                            children: [
-                              const Flexible(
-                                flex: 10,
-                                child: Padding(
-                                  padding: EdgeInsets.all(16),
-                                )
-                              ),
-                              Flexible(
-                                flex: 40,
-                                child: TextFormField(
-                                    decoration: const InputDecoration(
-                                      hintText: 'Label de l\'intervention',
-                                    ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return TEXT_REQUIRED;
-                                      } else {
-                                        textFieldsValue["label"] = value;
-                                      }
-                                      return null;
-                                    })
-
-                                ),
-                              const Flexible(
-                                  flex: 10,
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16),
-                                  )
-                              ),
-                              Flexible(
-                                  flex: 40,
-                                  child: DropdownButtonFormField(
-                                    hint: const Text('Code Sinistre'),
-                                    items: disasterCodeList,
-                                    value: 0,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedDisasterCode = value as int;
-                                      });
-                                    }
-                                  )
-                              )
-                            ],
-                          ),
-                          Flex(
-                            direction: Axis.horizontal,
-                            children: [
-                              const Flexible(
-                                  flex: 10,
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16),
-                                  )
-                              ),
-                              Flexible(
-                                  flex: 100,
-                                  child: Container(
-                                    width: double.infinity,
-                                    height: 250,
-                                    child: ListView.separated(
-                                      itemCount: vehicles.length,
-                                      itemBuilder: (BuildContext context, int index) {
-                                        var vehicle = vehicles[index];
-                                        return Flex(
-                                          direction: Axis.horizontal,
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: [
-                                              Flexible(
-                                                flex: 60,
-                                                fit: FlexFit.tight,
-                                                child: Text(vehicle.acronym,
-                                                    style: const TextStyle(fontSize: 32)),
-                                              ),
-                                              Flexible(
-                                                flex: 15,
-                                                fit: FlexFit.tight,
-                                                child: IconButton(
-                                                    icon: const Icon(Icons.add, size: 48),
-                                                    tooltip: 'Augmente le nombre de ' + vehicle.acronym,
-                                                    onPressed: () {
-                                                      setState(() {
-                                                        vehicle.nbOfUnit += 1;
-                                                      });
-                                                    }
-                                                ),
-                                              ),
-                                              Flexible(
-                                                  flex: 10,
-                                                  child: Text(
-                                                      '${vehicle.nbOfUnit}',
-                                                      style: const TextStyle(fontSize: 32)
-                                                  )
-                                              ),
-                                              Flexible(
-                                                  flex: 15,
-                                                  child: IconButton(
-                                                      icon: const Icon(Icons.remove, size: 48),
-                                                      tooltip: 'Diminue le nombre de ' + vehicle.acronym,
-                                                      onPressed: () {
-                                                        setState(() {
-                                                          if(vehicle.nbOfUnit >0) {
-                                                            vehicle.nbOfUnit -= 1;
-                                                          }
-                                                        });
-                                                      },
-                                                  ),
-                                              )
-                                          ]
-                                        );
-                                      },
-                                      separatorBuilder: (BuildContext context, int index) =>
-                                      Flex(
-                                        direction: Axis.horizontal,
-                                        children: const [
-                                          Flexible(
-                                            flex: 100,
-                                            child: Divider(),
-                                          ),
-                                          Flexible(
-                                              flex: 10,
-                                              child: Padding(
-                                                  padding: EdgeInsets.only(top: 32)
-                                              )
-                                          )]
-                                      ),
-                                  )
-                                  )
-                              ),
-                              const Flexible(
-                                  flex: 10,
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16),
-                                  )
-                              ),
-                            ]
-                          ),
                           const Padding(
                               padding: const EdgeInsets.all(8)
                           ),
@@ -277,42 +216,222 @@ class FormWidgetState extends State<FormWidget> {
                               Flexible(
                                   flex: 40,
                                   child: TextFormField(
+                                      focusNode: textLabelFieldFocusNode,
                                       decoration: const InputDecoration(
-                                        hintText: 'Adresse :    Numéro de rue,    rue,    ville',
+                                        hintText: 'Label de l\'intervention',
                                       ),
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
+                                          labelFormField = "";
                                           return TEXT_REQUIRED;
                                         } else {
-                                          textFieldsValue["adresse"] = value;
+                                          labelFormField = value;
                                         }
                                         return null;
                                       })
 
                               ),
-                            ]
+                              const Flexible(
+                                  flex: 10,
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16),
+                                  )
+                              ),
+                              Flexible(
+                                  flex: 40,
+                                  child: DropdownButtonFormField(
+                                      hint: const Text('Code Sinistre'),
+                                      items: disasterCodeList,
+                                      value: 0,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedDisasterCode = value as int;
+                                        });
+                                      }
+                                  )
+                              )
+                            ],
+                          ),
+                          Flex(
+                              direction: Axis.horizontal,
+                              children: [
+                                const Flexible(
+                                    flex: 10,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16),
+                                    )
+                                ),
+                                Flexible(
+                                    flex: 100,
+                                    child: Container(
+                                        width: double.infinity,
+                                        height: 250,
+                                        child: Scrollbar(
+                                            isAlwaysShown: true,
+                                            child: ListView.separated(
+                                              itemCount: vehicles.length,
+                                              itemBuilder: (BuildContext context, int index) {
+                                                var vehicle = vehicles[index];
+                                                return Flex(
+                                                    direction: Axis.horizontal,
+                                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                                    children: [
+                                                      Flexible(
+                                                        flex: 60,
+                                                        fit: FlexFit.tight,
+                                                        child: Text(vehicle.acronym,
+                                                            style: const TextStyle(fontSize: 32)),
+                                                      ),
+                                                      Flexible(
+                                                        flex: 15,
+                                                        fit: FlexFit.tight,
+                                                        child: IconButton(
+                                                            icon: const Icon(Icons.add, size: 48),
+                                                            tooltip: 'Augmente le nombre de ' + vehicle.acronym,
+                                                            onPressed: () {
+                                                              setState(() {
+                                                                vehicle.nbOfUnit += 1;
+                                                              });
+                                                            }
+                                                        ),
+                                                      ),
+                                                      Flexible(
+                                                          flex: 10,
+                                                          child: Text(
+                                                              '${vehicle.nbOfUnit}',
+                                                              style: const TextStyle(fontSize: 32)
+                                                          )
+                                                      ),
+                                                      Flexible(
+                                                        flex: 15,
+                                                        child: IconButton(
+                                                          icon: const Icon(Icons.remove, size: 48),
+                                                          tooltip: 'Diminue le nombre de ' + vehicle.acronym,
+                                                          onPressed: () {
+                                                            setState(() {
+                                                              if(vehicle.nbOfUnit >0) {
+                                                                vehicle.nbOfUnit -= 1;
+                                                              }
+                                                            });
+                                                          },
+                                                        ),
+                                                      )
+                                                    ]
+                                                );
+                                              },
+                                              separatorBuilder: (BuildContext context, int index) =>
+                                                  Flex(
+                                                      direction: Axis.horizontal,
+                                                      children: const [
+                                                        Flexible(
+                                                          flex: 100,
+                                                          child: Divider(),
+                                                        ),
+                                                        Flexible(
+                                                            flex: 10,
+                                                            child: Padding(
+                                                                padding: EdgeInsets.only(top: 32)
+                                                            )
+                                                        )]
+                                                  ),
+                                            )
+                                        )
+                                    )
+                                ),
+                                const Flexible(
+                                    flex: 10,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16),
+                                    )
+                                ),
+                              ]
                           ),
                           const Padding(
-                              padding: const EdgeInsets.all(32)
+                              padding: const EdgeInsets.all(8)
+                          ),
+                          Flex(
+                              direction: Axis.horizontal,
+                              children: [
+                                const Flexible(
+                                    flex: 10,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16),
+                                    )
+                                ),
+                                Flexible(
+                                    flex: 40,
+                                    child: TextFormField(
+                                        focusNode: textAddressFieldFocusNode,
+                                        controller: addressControler,
+                                        onFieldSubmitted: (term) {
+                                          _getPosition();
+                                          textAddressFieldFocusNode.unfocus();
+                                        },
+                                        decoration: const InputDecoration(
+                                          hintText: 'Adresse :    Numéro de rue,    rue,    ville',
+                                        ),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            addressFormField = "";
+                                            return TEXT_REQUIRED;
+                                          } else {
+                                            addressFormField = value;
+                                          }
+                                          return null;
+                                        })
+                                ),
+                              ]
+                          ),
+                          const Padding(
+                              padding: EdgeInsets.all(16),
                           ),
                           Flex(
                             direction: Axis.horizontal,
                             children: [
                               Flexible(
-                                flex: 30,
-                                fit: FlexFit.tight,
-                                child: Container()
+                                  flex: 15,
+                                  fit: FlexFit.tight,
+                                  child: Container()
+                              ),
+                              Flexible(
+                                  flex: 40,
+                                  fit: FlexFit.tight,
+                                  child: !isMarked ?
+                                    Text("Sélectionnez une addresse pour placer un marqueur.") :
+                                      Text("Précisez l'emplacement de l'intervention si nécessaire.")
+                              ),
+                              Flexible(
+                                  flex: 10,
+                                  fit: FlexFit.tight,
+                                  child: Container()
+                              )
+                            ],
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.all(16),
+                          ),
+                          Flex(
+                            direction: Axis.horizontal,
+                            children: [
+                              Flexible(
+                                  flex: 30,
+                                  fit: FlexFit.tight,
+                                  child: Container()
                               ),
                               Flexible(
                                   flex: 40,
                                   fit: FlexFit.tight,
                                   child: TextButton(
                                     style: TextButton.styleFrom(
-                                      backgroundColor: Colors.deepOrange,
+                                      backgroundColor: _isSubmitButtonDisabled() ? Colors.grey : Colors.deepOrange,
                                       primary: Colors.white,
                                     ),
-                                    onPressed: () {},
-                                    child: Text('TextButton'),
+                                    onPressed: () {
+                                      if (!_isSubmitButtonDisabled()) {
+                                        submitForm();
+                                      }
+                                    },
+                                    child: Text('Créer'),
                                   )
                               ),
                               Flexible(
@@ -323,24 +442,30 @@ class FormWidgetState extends State<FormWidget> {
                             ],
                           )
                         ]
-                      )
                     )
                 )
-              )
+            )
+        )
     );
   }
-}
 
-class MapWidget extends StatelessWidget {
-  const MapWidget({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return FlutterMap(
+  Widget getMapWidget() {
+    return  FlutterMap(
       options: MapOptions(
+        onTap: _handleTap,
+        onMapCreated: (c) {
+          mapController = c;
+        },
+        controller: mapController,
         center: LatLng(48.117266, -1.6777926),
-        zoom: 10,
+        zoom: MAP_DEFAULT_ZOOM,
+        interactiveFlags: !isMarked ? InteractiveFlag.none : InteractiveFlag.pinchZoom | InteractiveFlag.drag,
       ),
+      layers: [
+        MarkerLayerOptions(
+            markers: isMarked ? [marker] : []
+        )
+      ],
       children: <Widget>[
         TileLayerWidget(
           options: TileLayerOptions(
@@ -351,27 +476,33 @@ class MapWidget extends StatelessWidget {
       ],
     );
   }
-}
 
-class Pane1 extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {return Container(color: Colors.green[200],child: Center(child: Text('Pane 1'),),);}}
-
-class Pane2 extends StatelessWidget {
-  final _formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
-
-    return Container(
-        margin: const EdgeInsets.all(15.0),
-        child: SingleChildScrollView(
-            child: Stack(children: <Widget>[
-              Form(
-                  key: _formKey,
-                  child: Column()
-              )
-            ])
-        )
-    );
+    _loadDisasterCode();
+    return
+      Flex(
+              direction: Axis.horizontal,
+              children: [
+                Flexible(
+                    flex: formProportion,
+                    fit: FlexFit.tight,
+                    child: GestureDetector(
+                      onTap: () {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        if( textAddressFieldFocusNode.hasFocus ) {
+                          _getPosition();
+                        }
+                      },
+                      child: getFormWidget()
+                    ),
+                ),
+                Flexible(
+                    flex: 100 - formProportion,
+                    fit: FlexFit.tight,
+                    child: getMapWidget()
+                )
+              ]
+      );
   }
 }
