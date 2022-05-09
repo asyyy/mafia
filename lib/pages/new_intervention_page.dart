@@ -1,11 +1,18 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:projet_groupe_c/assets/constants.dart';
 import 'package:projet_groupe_c/model/disasterCode.dart';
+import 'package:projet_groupe_c/model/intervention.dart';
+import 'package:projet_groupe_c/pages/loading_page.dart';
 import 'dart:developer';
 import 'package:projet_groupe_c/services/geoloc_services.dart';
+
+import '../model/vehicles.dart';
+import '../services/api_services.dart' as service;
 
 ///
 /// Widget that allows create new intervention
@@ -34,9 +41,9 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
   final int formProportion = 60;
 
   DisasterCodeModel inc = DisasterCodeModel(
-      code: disasterCode["inc"], color: const Color(0xFFFF0000));
+      code: "inc", color: const Color(0xFFFF0000));
   DisasterCodeModel sap = DisasterCodeModel(
-      code: disasterCode["sap"], color: const Color(0xFF00FF00));
+      code: "sap", color: const Color(0xFF00FF00));
 
   final _formKey = GlobalKey<FormState>();
   late Marker marker;
@@ -53,6 +60,10 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
     VehiclesUtils(acronym: 'FMOGP', nbOfUnit: 0),
     VehiclesUtils(acronym: 'EPA', nbOfUnit: 0),
     VehiclesUtils(acronym: 'VLCG', nbOfUnit: 0),
+  ];
+
+
+  List<VehicleModel> vehiclesType = [
   ];
 
   double latitude = 48.117266;
@@ -90,21 +101,60 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
     });
   }
 
-  submitForm() {
-    print('label : ' + labelFormField);
-    print('Code Sinistre : ' + disasterModelList[_selectedDisasterCode].code.toString());
-    print('addresse : ' + addressFormField);
-    print('latitute : ' + positionFormField.latitude.toString());
-    print('longitude : ' + positionFormField.longitude.toString());
-    vehicles.forEach((element) {
-      if(element.nbOfUnit > 0) {
-        print(
-            'vehicles ' + element.acronym + ', ' + element.nbOfUnit.toString() +
-                ' needed');
+  submitForm() async {
+    String latitude = positionFormField.latitude.toString();
+    String longitude = positionFormField.longitude.toString();
+    String dateNow = DateTime.now().toIso8601String();
+    String dateArrivedEstimated = DateTime.now().add(const Duration(hours: 2)).toIso8601String();
+    int sinisterType = DisasterCodeModel.getEnumValue(disasterModelList[_selectedDisasterCode].code.toString()) ;
+
+    InterventionModel newIntervention = InterventionModel(
+        label: labelFormField,
+        startDate: dateNow,
+        longitude: longitude,
+        latitude: latitude,
+        sinisterType: sinisterType,
+        labelAddress: addressFormField
+    );
+
+
+    var intervention = "";
+    await service.ApiService.postIntervention(newIntervention).then((value) => intervention = value);
+    Map<String, dynamic> mapIntervention = jsonDecode(intervention);
+
+    newIntervention.id = mapIntervention["_id"];
+
+    print("intervention created");
+    vehicles.forEach((element) async {
+      while(element.nbOfUnit >= 1) {
+        print(element.acronym + " " + element.nbOfUnit.toString());
+        VehicleModel vehicleModel = VehicleModel(name: "pq un vehicule doit il avoir un nom?",
+            sinisterType: "6276c191c6a97a0c672aa109",
+            vehicleType: "6276c2fcc6a97a0c672aa10b",
+            departureDate: dateNow,
+            latitude: latitude,
+            longitude: longitude,
+            validationState: "6276c236c6a97a0c672aa10a",
+            arrivedDateEst: dateArrivedEstimated,
+            interventionId: newIntervention.id);
+        var vehicle = "";
+
+        await service.ApiService.postVehicule(vehicleModel).then((value) => vehicle = value); //post Vehicle
+
+        Map<String, dynamic> mapVehicleModel = jsonDecode(vehicle);
+
+        newIntervention.vehicles.add(VehicleModel.fromJson(mapVehicleModel));//transform vehicle string to Map<String, Dynamic> and to VehicleModel
+
+        element.nbOfUnit -=1; //if everithing goes well, we've added a vehicle to intervention so we delete one from this list.
       }
     });
-    print('startDate ' + DateTime.now().toString());
-    print('images []');
+
+
+    //Navigate to loginPage, waiting for intervention page.
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LoadingPage()),
+    );
   }
 
   void _loadDisasterCode() {
@@ -505,4 +555,5 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
               ]
       );
   }
+
 }

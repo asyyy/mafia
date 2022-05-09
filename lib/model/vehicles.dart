@@ -4,20 +4,20 @@ import 'package:projet_groupe_c/model/iconModel.dart';
 class VehicleModel {
   /// Implementation of a vehicle
   VehicleModel(
-      {required this.id,
+      {id,
       required this.type,
       required this.validationState,
       required this.departureDate,
       required this.arrivedDateEst,
-      required this.arrivedDateReal,
+      arrivedDateReal,
       required this.interventionId,
       required this.iconModel});
-  String id;
+  late String id = "";
   int type;
-  int validationState;
+  String validationState;
   String departureDate;
   String arrivedDateEst;
-  String arrivedDateReal;
+  late String arrivedDateReal = "";
   String interventionId;
   IconModel iconModel;
 

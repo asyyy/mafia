@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/services.dart';
 import 'package:projet_groupe_c/model/intervention.dart';
 import 'package:projet_groupe_c/model/user.dart';
+import 'package:projet_groupe_c/model/vehicles.dart';
 import '../assets/api_constants.dart';
 import 'package:http/http.dart' as http;
 import '../globals.dart' as globals;
@@ -27,8 +29,8 @@ class ApiService {
     );
   }
 
-  static Future<bool> postIntervention(InterventionModel intervention) async {
-    bool tmpResult = false;
+  static Future<String> postIntervention(InterventionModel intervention) async {
+    String tmpResult = "";
     await http
         .post(
       Uri.parse(ApiUrl + "/" + ApiCollection),
@@ -39,9 +41,13 @@ class ApiService {
       body: jsonEncode(intervention.toJson()),
     )
         .then((value) {
-      tmpResult = true;
+      if (value.statusCode >= 200 && value.statusCode <300) {
+        tmpResult = value.body;
+      } else {
+        tmpResult = "";
+      }
     }).catchError((docSnapshot) {
-      tmpResult = false;
+      tmpResult = "Erreur lors de la création de l'intervention";
     });
     return tmpResult;
   }
@@ -160,6 +166,29 @@ class ApiService {
       }
     }).catchError((docSnapshot) {
       tmpResult = 'Erreur de connexion';
+    });
+    return tmpResult;
+  }
+
+  static Future<String> postVehicule(VehicleModel vehicule) async {
+    String tmpResult = "";
+    await http
+        .post(
+      Uri.parse(ApiUrl + "/" + Vehicules),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'token': globals.token
+      },
+      body: jsonEncode(vehicule.toJson()),
+    )
+        .then((value) {
+      if (value.statusCode >= 200 && value.statusCode <300) {
+        tmpResult = value.body;
+      } else {
+        tmpResult = "";
+      }
+    }).catchError((docSnapshot) {
+      tmpResult = "Erreur lors de la création de l'intervention";
     });
     return tmpResult;
   }

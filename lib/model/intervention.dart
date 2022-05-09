@@ -5,23 +5,28 @@ import 'package:projet_groupe_c/model/polygon.dart';
 import 'package:projet_groupe_c/model/vehicles.dart';
 
 class InterventionModel {
+
   /// Implementation of an intervention
   InterventionModel(
-      {required this.id,
+      {id,
+      required this.labelAddress,
       required this.label,
       required this.startDate,
-      required this.endDate,
+      endDate,
+       required this.sinisterType,
       required this.longitude,
       required this.latitude});
-  String id;
+  late String id;
   String label;
   String startDate;
-  String endDate;
   List<VehicleModel> vehicles = [];
   List<SymbolModel> symbols = [];
   List<PolygonModel> polygons = [];
-  double longitude;
-  double latitude;
+  String endDate = "";
+  String longitude;
+  String latitude;
+  String labelAddress;
+  int sinisterType;
 
   /// Create InterventionModel from JSON
   factory InterventionModel.fromJson(Map<String, dynamic> json) =>
@@ -30,19 +35,8 @@ class InterventionModel {
           label: json['label'],
           startDate: json['startDate'],
           endDate: json['endDate'],
-          // vehicles: List.generate(
-          //     json['vehicles'].length,
-          //     (index) => VehicleModel(
-          //         id: json["_id"],
-          //         type: json["type"],
-          //         validationState: json['validationState'],
-          //         departureDate: json['departureDate'],
-          //         arrivedDateEst: json['arrivedDateEst'],
-          //         arrivedDateReal: json['arrivedDateReal'],
-          //         interventionId: json['interventionId'],
-          //         iconModel: json['iconModel'])),
-          // symbols: [],
-          // polygons: [],
+          labelAddress: json['labelAddress'],
+          sinisterType: json['sinisterType'],
           longitude: json['longitude'],
           latitude: json['latitude']);
 
@@ -50,6 +44,8 @@ class InterventionModel {
   Map<String, dynamic> toJson() => {
         "label": label,
         "startDate": startDate,
+        "labelAddress": labelAddress,
+        "sinisterType": sinisterType,
         "endDate": endDate,
         "vehicles": vehiclesToJson(),
         "symboles": symbolToJson(),
@@ -91,13 +87,14 @@ class InterventionModel {
   }
 
   /// Get list of markers for each vehicles
-  List<Marker> getVehiclesMarkers({listener}) {
+  /*List<Marker> getVehiclesMarkers({listener}) {
+>>>>>>> 6b7dfe4 (last push, will redirect to loading page waiting)
     List<Marker> markers = [];
     for (VehicleModel v in vehicles) {
       markers.add(v.iconModel.getMarker(listener: listener));
     }
     return markers;
-  }
+  }*/
 
   /// Get list of markers for each marker
   List<Marker> getSymbolsMarkers({listener}) {
@@ -118,8 +115,8 @@ class InterventionModel {
   }
 
   /// Get position of intervention
-  LatLng getposition() {
-    return LatLng(latitude, longitude);
+  /*LatLng getposition() {
+    return LatLng(latitude as double, longitude as double);
   }
 
   List<Marker> getAllMarkers({listener}) {
@@ -127,5 +124,5 @@ class InterventionModel {
     allMarkers.addAll(getVehiclesMarkers(listener: listener));
     allMarkers.addAll(getSymbolsMarkers(listener: listener));
     return allMarkers;
-  }
+  }*/
 }
