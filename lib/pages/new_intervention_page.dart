@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:projet_groupe_c/assets/constants.dart';
+import 'package:projet_groupe_c/model/Mapper.dart';
 import 'package:projet_groupe_c/model/disasterCode.dart';
 import 'package:projet_groupe_c/model/iconModel.dart';
 import 'package:projet_groupe_c/model/intervention.dart';
@@ -41,6 +42,10 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
 
   final int formProportion = 60;
 
+  Mapper mapper = Mapper();
+
+
+
   DisasterCodeModel inc = DisasterCodeModel(
       code: "inc", color: const Color(0xFFFF0000));
   DisasterCodeModel sap = DisasterCodeModel(
@@ -55,16 +60,11 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
   List<DisasterCodeModel> disasterModelList = [];//Disaster Code List
 
   List<VehiclesUtils> vehicles = [
-    VehiclesUtils(acronym: 'VL', nbOfUnit: 0),
     VehiclesUtils(acronym: 'DA', nbOfUnit: 0),
     VehiclesUtils(acronym: 'FTP', nbOfUnit: 0),
     VehiclesUtils(acronym: 'FMOGP', nbOfUnit: 0),
     VehiclesUtils(acronym: 'EPA', nbOfUnit: 0),
     VehiclesUtils(acronym: 'VLCG', nbOfUnit: 0),
-  ];
-
-
-  List<VehicleModel> vehiclesType = [
   ];
 
   double latitude = 48.117266;
@@ -84,6 +84,7 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
   @override
   void initState() {
     mapController = MapController();
+
     addListener();
     disasterModelList = [sap, inc];
     super.initState();
@@ -103,18 +104,23 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
   }
 
   submitForm() async {
+    Map<String, String> sinisterType = mapper.sinisterTypes;
+    Map<String, String> vehicleType = mapper.vehiclesTypes;
+    Map<String, String> validationVehicle = mapper.validationsVehicles;
+
     String latitude = positionFormField.latitude.toString();
     String longitude = positionFormField.longitude.toString();
     String dateNow = DateTime.now().toIso8601String();
     String dateArrivedEstimated = DateTime.now().add(const Duration(hours: 2)).toIso8601String();
-    int sinisterType = DisasterCodeModel.getEnumValue(disasterModelList[_selectedDisasterCode].code.toString()) ;
+
+    int sinisterTypeKey = DisasterCodeModel.getEnumValue(disasterModelList[_selectedDisasterCode].code.toString());
 
     InterventionModel newIntervention = InterventionModel(
         label: labelFormField,
         startDate: dateNow,
         longitude: longitude,
         latitude: latitude,
-        sinisterType: sinisterType,
+        sinisterType: sinisterTypeKey,
         labelAddress: addressFormField
     );
 
