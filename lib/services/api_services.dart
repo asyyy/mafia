@@ -182,6 +182,7 @@ class ApiService {
       body: jsonEncode(vehicule.toJson()),
     )
         .then((value) {
+      print("vehicle " + value.statusCode.toString() + " " + value.body);
       if (value.statusCode >= 200 && value.statusCode <300) {
         tmpResult = value.body;
       } else {

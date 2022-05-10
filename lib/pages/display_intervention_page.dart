@@ -199,7 +199,7 @@ class _DisplayInterventionState extends State<DisplayIntervention> {
     VehicleModel vm = VehicleModel(
         id: Random().nextInt(9999999).toString(),
         type: marker_values["type"],
-        validationState: 0,
+        validationState: "6276c236c6a97a0c672aa10a",
         departureDate: "2022-02-24",
         arrivedDateEst: "2022-02-24",
         arrivedDateReal: "2022-02-24",
@@ -696,9 +696,7 @@ class _DisplayInterventionState extends State<DisplayIntervention> {
                     id: "",
                     label: "",
                     startDate: "",
-                    endDate: "",
-                    longitude: 0.0,
-                    latitude: 0.0);
+                    endDate: "", labelAddress: '', sinisterType: 1, latitude: '', longitude: '',);
             return Flex(
               direction: Axis.horizontal,
               children: [

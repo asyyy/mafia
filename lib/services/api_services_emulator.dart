@@ -4,13 +4,15 @@ import 'package:projet_groupe_c/model/vehicles.dart';
 import '../model/symbol.dart';
 
 class ApiServiceEmulator {
-  InterventionModel intervention = new InterventionModel(
+  InterventionModel intervention = InterventionModel(
       id: "id",
       label: "Feu Capgemini Rennes",
       startDate: "10-04-2022",
       endDate: "10-04-2022",
-      longitude: -1.6777926,
-      latitude: 48.117266);
+      longitude: "-1.6777926",
+      latitude: "48.117266",
+      labelAddress: 'test',
+      sinisterType: 1);
 
   Future<InterventionModel> getInterventionById() async {
     return Future.delayed(Duration(milliseconds: 500))

@@ -6,6 +6,7 @@ import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:projet_groupe_c/assets/constants.dart';
 import 'package:projet_groupe_c/model/disasterCode.dart';
+import 'package:projet_groupe_c/model/iconModel.dart';
 import 'package:projet_groupe_c/model/intervention.dart';
 import 'package:projet_groupe_c/pages/loading_page.dart';
 import 'dart:developer';
@@ -124,22 +125,31 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
 
     newIntervention.id = mapIntervention["_id"];
 
+    IconModel defaultIcon = IconModel(
+        orientation: 1.0,
+        size: 24.0,
+        label: "label",
+        latitude: positionFormField.latitude,
+        longitude: positionFormField.longitude,
+        color: disasterModelList[_selectedDisasterCode].color,
+        iconId: 3
+    );
+
     print("intervention created");
     vehicles.forEach((element) async {
       while(element.nbOfUnit >= 1) {
         print(element.acronym + " " + element.nbOfUnit.toString());
-        VehicleModel vehicleModel = VehicleModel(name: "pq un vehicule doit il avoir un nom?",
-            sinisterType: "6276c191c6a97a0c672aa109",
-            vehicleType: "6276c2fcc6a97a0c672aa10b",
+        VehicleModel vehicleModel = VehicleModel(
             departureDate: dateNow,
-            latitude: latitude,
-            longitude: longitude,
             validationState: "6276c236c6a97a0c672aa10a",
             arrivedDateEst: dateArrivedEstimated,
-            interventionId: newIntervention.id);
+            interventionId: newIntervention.id,
+            iconModel: defaultIcon,
+            type: 2);
         var vehicle = "";
 
         await service.ApiService.postVehicule(vehicleModel).then((value) => vehicle = value); //post Vehicle
+
 
         Map<String, dynamic> mapVehicleModel = jsonDecode(vehicle);
 
@@ -151,10 +161,10 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
 
 
     //Navigate to loginPage, waiting for intervention page.
-    Navigator.push(
+    /*Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const LoadingPage()),
-    );
+    );*/
   }
 
   void _loadDisasterCode() {

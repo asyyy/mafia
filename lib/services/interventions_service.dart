@@ -8,8 +8,6 @@ List<InterventionModel> getInterventionsFromJSON(json){
   }
   return interventions;
 }
-<<<<<<< HEAD
-=======
 
 /// Get vehicles Markers from list of InterventionModel
 /*List<Marker> getMarkersFromInterventions(List<InterventionModel> interventions) {
@@ -19,4 +17,3 @@ List<InterventionModel> getInterventionsFromJSON(json){
   }
   return markers;
 }*/
->>>>>>> 6b7dfe4 (last push, will redirect to loading page waiting)

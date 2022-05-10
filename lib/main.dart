@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:projet_groupe_c/pages/display_intervention_page.dart';
+import 'package:projet_groupe_c/pages/new_intervention_page.dart';
 import 'globals.dart' as globals;
 
 void main() async{
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: SafeArea(child: DisplayIntervention()),
+      home: const SafeArea(child: NewInterventionPage()),
     );
   }
 }

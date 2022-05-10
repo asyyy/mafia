@@ -87,14 +87,13 @@ class InterventionModel {
   }
 
   /// Get list of markers for each vehicles
-  /*List<Marker> getVehiclesMarkers({listener}) {
->>>>>>> 6b7dfe4 (last push, will redirect to loading page waiting)
+  List<Marker> getVehiclesMarkers({listener}) {
     List<Marker> markers = [];
     for (VehicleModel v in vehicles) {
       markers.add(v.iconModel.getMarker(listener: listener));
     }
     return markers;
-  }*/
+  }
 
   /// Get list of markers for each marker
   List<Marker> getSymbolsMarkers({listener}) {
@@ -115,8 +114,8 @@ class InterventionModel {
   }
 
   /// Get position of intervention
-  /*LatLng getposition() {
-    return LatLng(latitude as double, longitude as double);
+  LatLng getposition() {
+    return LatLng(double.parse(latitude), double.parse(longitude));
   }
 
   List<Marker> getAllMarkers({listener}) {
@@ -124,5 +123,5 @@ class InterventionModel {
     allMarkers.addAll(getVehiclesMarkers(listener: listener));
     allMarkers.addAll(getSymbolsMarkers(listener: listener));
     return allMarkers;
-  }*/
+  }
 }
