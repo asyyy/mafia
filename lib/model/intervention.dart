@@ -26,7 +26,7 @@ class InterventionModel {
   String longitude;
   String latitude;
   String labelAddress;
-  int sinisterType;
+  String sinisterType;
 
   /// Create InterventionModel from JSON
   factory InterventionModel.fromJson(Map<String, dynamic> json) =>
@@ -72,16 +72,7 @@ class InterventionModel {
   String vehiclesToString() {
     var vToS = "";
     for (VehicleModel v in vehicles) {
-      vToS += "name:" +
-          v.iconModel.label +
-          "\nType de vehicule : " +
-          v.type.toString() +
-          "\nValidation : " +
-          v.validationState.toString() +
-          "\nLongitude : " +
-          v.iconModel.longitude.toString() +
-          "\nLatitude : " +
-          v.iconModel.latitude.toString();
+      vToS += v.toString();
     }
     return vToS;
   }

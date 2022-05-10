@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 Map<String, dynamic> disasterCode = {
-  "sap": 0,
-  "inc": 1,
+  "sap": "SAP",
+  "inc": "INC",
 };
 
 class DisasterCodeModel {
@@ -21,7 +21,7 @@ class DisasterCodeModel {
     "color": color,
   };
 
-  static int getEnumValue(String code){
+  static String getEnumValue(String code){
     return disasterCode[code];
   }
 

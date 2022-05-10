@@ -53,6 +53,24 @@ class IconModel {
     );
   }
 
+  @override
+  String toString() {
+    return "orientation : " +
+        orientation.toString() +
+        "\nsize : " +
+        size.toString() +
+        "\nlabel : " +
+        label +
+        "\nLatitude : " +
+        latitude.toString() +
+        "\nlongitude : " +
+        longitude.toString() +
+        "\ncolor : " +
+        color.toString() +
+        "\niconId : " +
+        iconId.toString();
+  }
+
   LatLng getPosition() {
     return LatLng(latitude, longitude);
   }

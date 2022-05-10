@@ -2,18 +2,23 @@ import 'package:latlong2/latlong.dart';
 import 'package:projet_groupe_c/model/iconModel.dart';
 
 class VehicleModel {
+
   /// Implementation of a vehicle
   VehicleModel(
       {id,
-      required this.type,
       required this.validationState,
       required this.departureDate,
       required this.arrivedDateEst,
       arrivedDateReal,
       required this.interventionId,
-      required this.iconModel});
+      required this.iconModel,
+        required this.vehicleType,
+      required this.sinisterType,
+      required this.name});
   late String id = "";
-  int type;
+  String vehicleType;
+  String sinisterType;
+  String name;
   String validationState;
   String departureDate;
   String arrivedDateEst;
@@ -28,35 +33,47 @@ class VehicleModel {
 
   factory VehicleModel.fromJson(Map<String, dynamic> json) => VehicleModel(
       id: json["_id"],
-      type: json["type"],
       validationState: json['validationState'],
       departureDate: json['departureDate'],
       arrivedDateEst: json['arrivedDateEst'],
       arrivedDateReal: json['arrivedDateReal'],
       interventionId: json['interventionId'],
-      iconModel: json['iconModel']);
+      iconModel: json['iconModel'],
+      vehicleType: json['vehicleType'],
+      name: json['name'],
+      sinisterType: json['sinisterType']);
 
-  /// Export InterventionModel as JSON
+  /// Export VehicleModel as JSON
   Map<String, dynamic> toJson() => {
-        "type": type,
         "validationState": validationState,
         "departureDate": departureDate,
         "arrivedDateEst": arrivedDateEst,
         "arrivedDateReal": arrivedDateReal,
-        "interventionId": interventionId
+        "interventionId": interventionId,
+        "vehicleType": vehicleType,
+        "name": name,
+        "sinisterType": sinisterType,
       };
 
   @override
   String toString() {
     return "Name : " +
         iconModel.label +
-        "\nType de vehicule : " +
-        type.toString() +
         "\nValidation : " +
-        validationState.toString() +
+        validationState +
         "\nLongitude : " +
         iconModel.longitude.toString() +
         "\nLatitude : " +
-        iconModel.latitude.toString();
+        iconModel.latitude.toString() +
+        "\nvehicleType : " +
+        vehicleType +
+        "\ndepartureDate : " +
+        departureDate +
+        "\narrivedDateReal : " +
+        arrivedDateReal +
+        "\narrivedDateEst : " +
+        arrivedDateEst +
+        "\nsinisterType : " +
+        sinisterType;
   }
 }

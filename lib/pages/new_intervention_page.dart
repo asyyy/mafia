@@ -9,12 +9,15 @@ import 'package:projet_groupe_c/model/Mapper.dart';
 import 'package:projet_groupe_c/model/disasterCode.dart';
 import 'package:projet_groupe_c/model/iconModel.dart';
 import 'package:projet_groupe_c/model/intervention.dart';
+import 'package:projet_groupe_c/pages/error_page.dart';
 import 'package:projet_groupe_c/pages/loading_page.dart';
 import 'dart:developer';
 import 'package:projet_groupe_c/services/geoloc_services.dart';
+import 'package:projet_groupe_c/services/mapper_service.dart';
 
 import '../model/vehicles.dart';
 import '../services/api_services.dart' as service;
+import '../services/interventions_service.dart';
 
 ///
 /// Widget that allows create new intervention
@@ -44,8 +47,6 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
 
   Mapper mapper = Mapper();
 
-
-
   DisasterCodeModel inc = DisasterCodeModel(
       code: "inc", color: const Color(0xFFFF0000));
   DisasterCodeModel sap = DisasterCodeModel(
@@ -54,18 +55,12 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
   final _formKey = GlobalKey<FormState>();
   late Marker marker;
   bool isMarked = false;
-  final Map<String, String> textFieldsValue = {};
 
   List<DropdownMenuItem<int>> disasterCodeList = [];
   List<DisasterCodeModel> disasterModelList = [];//Disaster Code List
 
-  List<VehiclesUtils> vehicles = [
-    VehiclesUtils(acronym: 'DA', nbOfUnit: 0),
-    VehiclesUtils(acronym: 'FTP', nbOfUnit: 0),
-    VehiclesUtils(acronym: 'FMOGP', nbOfUnit: 0),
-    VehiclesUtils(acronym: 'EPA', nbOfUnit: 0),
-    VehiclesUtils(acronym: 'VLCG', nbOfUnit: 0),
-  ];
+  List<VehiclesUtils> vehicles = [];
+  Map<String, String> vehicleType = {};
 
   double latitude = 48.117266;
   double longitude = -1.6777926;
@@ -82,12 +77,22 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
   LatLng positionFormField = LatLng(48.117266, -1.6777926);
 
   @override
-  void initState() {
+  initState(){
     mapController = MapController();
-
     addListener();
     disasterModelList = [sap, inc];
     super.initState();
+  }
+
+  Future<List<VehiclesUtils>> _vehiculeTypeHandler() async {
+    await MapperService.getVehiclesType().then(
+            (value) => mapper.fillMapper(value, vehicleType));
+
+    vehicleType.forEach((key,value) {
+      vehicles.add(VehiclesUtils(acronym: key, nbOfUnit: 0));
+    });
+
+    return vehicles;
   }
 
   addListener() {
@@ -104,16 +109,13 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
   }
 
   submitForm() async {
-    Map<String, String> sinisterType = mapper.sinisterTypes;
-    Map<String, String> vehicleType = mapper.vehiclesTypes;
-    Map<String, String> validationVehicle = mapper.validationsVehicles;
 
     String latitude = positionFormField.latitude.toString();
     String longitude = positionFormField.longitude.toString();
     String dateNow = DateTime.now().toIso8601String();
     String dateArrivedEstimated = DateTime.now().add(const Duration(hours: 2)).toIso8601String();
 
-    int sinisterTypeKey = DisasterCodeModel.getEnumValue(disasterModelList[_selectedDisasterCode].code.toString());
+    String sinisterTypeKey = DisasterCodeModel.getEnumValue(disasterModelList[_selectedDisasterCode].code.toString());
 
     InterventionModel newIntervention = InterventionModel(
         label: labelFormField,
@@ -141,23 +143,34 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
         iconId: 3
     );
 
-    print("intervention created");
+
     vehicles.forEach((element) async {
       while(element.nbOfUnit >= 1) {
-        print(element.acronym + " " + element.nbOfUnit.toString());
+
+        String vehicleTypeIndex = mapper.findVehicleTypeByKey(element.acronym);
+        String validationState = mapper.findValidationVehiclesByKey("VALIDATED");
+        String sinisterTypeIndex = mapper.findSinisterTypeByKey(sinisterTypeKey);
+
         VehicleModel vehicleModel = VehicleModel(
             departureDate: dateNow,
-            validationState: "6276c236c6a97a0c672aa10a",
+            name: element.acronym + " ",
+            validationState: validationState,
+            sinisterType: sinisterTypeIndex,
             arrivedDateEst: dateArrivedEstimated,
             interventionId: newIntervention.id,
             iconModel: defaultIcon,
-            type: 2);
+            vehicleType: vehicleTypeIndex,
+        );
         var vehicle = "";
 
         await service.ApiService.postVehicule(vehicleModel).then((value) => vehicle = value); //post Vehicle
 
 
         Map<String, dynamic> mapVehicleModel = jsonDecode(vehicle);
+
+        ///TODO A MODIFIER UNE FOIS FIX!!!
+        ///LE BAC NE RENVOIE PAS D'IconModel QUAND ON POST UN VEHICULE
+        mapVehicleModel["iconModel"] = "nothing";
 
         newIntervention.vehicles.add(VehicleModel.fromJson(mapVehicleModel));//transform vehicle string to Map<String, Dynamic> and to VehicleModel
 
@@ -250,269 +263,279 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
     return !(isMarked && labelFormField.isNotEmpty && vehiclesExist);
   }
 
-
-
   Widget getFormWidget() {
-    return Container(
-        color: Colors.white,
-        child: Form(
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            key: _formKey,
-            child: Container(
-                child: Card(
-                    color: Colors.white,
-                    child: Column(
-                        children: <Widget>[
-                          const Padding(
-                              padding: const EdgeInsets.all(16)
-                          ),
-                          Text("Nouvelle Intervention"),
-                          const Padding(
-                              padding: const EdgeInsets.all(8)
-                          ),
-                          Flex(
-                            direction: Axis.horizontal,
-                            children: [
-                              const Flexible(
-                                  flex: 10,
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16),
-                                  )
-                              ),
-                              Flexible(
-                                  flex: 40,
-                                  child: TextFormField(
-                                      focusNode: textLabelFieldFocusNode,
-                                      decoration: const InputDecoration(
-                                        hintText: 'Label de l\'intervention',
-                                      ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          labelFormField = "";
-                                          return TEXT_REQUIRED;
-                                        } else {
-                                          labelFormField = value;
-                                        }
-                                        return null;
-                                      })
-
-                              ),
-                              const Flexible(
-                                  flex: 10,
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16),
-                                  )
-                              ),
-                              Flexible(
-                                  flex: 40,
-                                  child: DropdownButtonFormField(
-                                      hint: const Text('Code Sinistre'),
-                                      items: disasterCodeList,
-                                      value: 0,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedDisasterCode = value as int;
-                                        });
-                                      }
-                                  )
-                              )
-                            ],
-                          ),
-                          Flex(
-                              direction: Axis.horizontal,
-                              children: [
-                                const Flexible(
-                                    flex: 10,
-                                    child: Padding(
-                                      padding: EdgeInsets.all(16),
-                                    )
+    return  FutureBuilder<List<VehiclesUtils>>(
+        future: _vehiculeTypeHandler(),
+        builder:
+      (BuildContext context, AsyncSnapshot<List<VehiclesUtils>> snapshot) {
+        if(snapshot.hasError) {
+          log("error : " + snapshot.error.toString());
+          return const ErrorPage();
+        } else if(snapshot.hasData) {
+          return Container(
+              color: Colors.white,
+              child: Form(
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  key: _formKey,
+                  child: Container(
+                      child: Card(
+                          color: Colors.white,
+                          child: Column(
+                              children: <Widget>[
+                                const Padding(
+                                    padding: const EdgeInsets.all(16)
                                 ),
-                                Flexible(
-                                    flex: 100,
-                                    child: Container(
-                                        width: double.infinity,
-                                        height: 250,
-                                        child: Scrollbar(
-                                            isAlwaysShown: true,
-                                            child: ListView.separated(
-                                              itemCount: vehicles.length,
-                                              itemBuilder: (BuildContext context, int index) {
-                                                var vehicle = vehicles[index];
-                                                return Flex(
-                                                    direction: Axis.horizontal,
-                                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                                    children: [
-                                                      Flexible(
-                                                        flex: 60,
-                                                        fit: FlexFit.tight,
-                                                        child: Text(vehicle.acronym,
-                                                            style: const TextStyle(fontSize: 32)),
-                                                      ),
-                                                      Flexible(
-                                                        flex: 15,
-                                                        fit: FlexFit.tight,
-                                                        child: IconButton(
-                                                            icon: const Icon(Icons.add, size: 48),
-                                                            tooltip: 'Augmente le nombre de ' + vehicle.acronym,
-                                                            onPressed: () {
-                                                              setState(() {
-                                                                vehicle.nbOfUnit += 1;
-                                                              });
-                                                            }
-                                                        ),
-                                                      ),
-                                                      Flexible(
-                                                          flex: 10,
-                                                          child: Text(
-                                                              '${vehicle.nbOfUnit}',
-                                                              style: const TextStyle(fontSize: 32)
-                                                          )
-                                                      ),
-                                                      Flexible(
-                                                        flex: 15,
-                                                        child: IconButton(
-                                                          icon: const Icon(Icons.remove, size: 48),
-                                                          tooltip: 'Diminue le nombre de ' + vehicle.acronym,
-                                                          onPressed: () {
-                                                            setState(() {
-                                                              if(vehicle.nbOfUnit >0) {
-                                                                vehicle.nbOfUnit -= 1;
-                                                              }
-                                                            });
-                                                          },
-                                                        ),
-                                                      )
-                                                    ]
-                                                );
-                                              },
-                                              separatorBuilder: (BuildContext context, int index) =>
-                                                  Flex(
-                                                      direction: Axis.horizontal,
-                                                      children: const [
-                                                        Flexible(
-                                                          flex: 100,
-                                                          child: Divider(),
-                                                        ),
-                                                        Flexible(
-                                                            flex: 10,
-                                                            child: Padding(
-                                                                padding: EdgeInsets.only(top: 32)
-                                                            )
-                                                        )]
-                                                  ),
-                                            )
+                                Text("Nouvelle Intervention"),
+                                const Padding(
+                                    padding: const EdgeInsets.all(8)
+                                ),
+                                Flex(
+                                  direction: Axis.horizontal,
+                                  children: [
+                                    const Flexible(
+                                        flex: 10,
+                                        child: Padding(
+                                          padding: EdgeInsets.all(16),
+                                        )
+                                    ),
+                                    Flexible(
+                                        flex: 40,
+                                        child: TextFormField(
+                                            focusNode: textLabelFieldFocusNode,
+                                            decoration: const InputDecoration(
+                                              hintText: 'Label de l\'intervention',
+                                            ),
+                                            validator: (value) {
+                                              if (value == null || value.isEmpty) {
+                                                labelFormField = "";
+                                                return TEXT_REQUIRED;
+                                              } else {
+                                                labelFormField = value;
+                                              }
+                                              return null;
+                                            })
+
+                                    ),
+                                    const Flexible(
+                                        flex: 10,
+                                        child: Padding(
+                                          padding: EdgeInsets.all(16),
+                                        )
+                                    ),
+                                    Flexible(
+                                        flex: 40,
+                                        child: DropdownButtonFormField(
+                                            hint: const Text('Code Sinistre'),
+                                            items: disasterCodeList,
+                                            value: 0,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _selectedDisasterCode = value as int;
+                                              });
+                                            }
                                         )
                                     )
+                                  ],
                                 ),
-                                const Flexible(
-                                    flex: 10,
-                                    child: Padding(
-                                      padding: EdgeInsets.all(16),
-                                    )
+                                Flex(
+                                    direction: Axis.horizontal,
+                                    children: [
+                                      const Flexible(
+                                          flex: 10,
+                                          child: Padding(
+                                            padding: EdgeInsets.all(16),
+                                          )
+                                      ),
+                                      Flexible(
+                                          flex: 100,
+                                          child: Container(
+                                              width: double.infinity,
+                                              height: 250,
+                                              child: Scrollbar(
+                                                  isAlwaysShown: true,
+                                                  child: ListView.separated(
+                                                    itemCount: vehicleType.length,
+                                                    itemBuilder: (BuildContext context, int index) {
+                                                      var vehicle = vehicles[index];
+                                                      return Flex(
+                                                          direction: Axis.horizontal,
+                                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                                          children: [
+                                                            Flexible(
+                                                              flex: 60,
+                                                              fit: FlexFit.tight,
+                                                              child: Text(vehicle.acronym,
+                                                                  style: const TextStyle(fontSize: 32)),
+                                                            ),
+                                                            Flexible(
+                                                              flex: 15,
+                                                              fit: FlexFit.tight,
+                                                              child: IconButton(
+                                                                  icon: const Icon(Icons.add, size: 48),
+                                                                  tooltip: 'Augmente le nombre de ' + vehicle.acronym,
+                                                                  onPressed: () {
+                                                                    setState(() {
+                                                                      vehicle.nbOfUnit += 1;
+                                                                    });
+                                                                  }
+                                                              ),
+                                                            ),
+                                                            Flexible(
+                                                                flex: 10,
+                                                                child: Text(
+                                                                    '${vehicle.nbOfUnit}',
+                                                                    style: const TextStyle(fontSize: 32)
+                                                                )
+                                                            ),
+                                                            Flexible(
+                                                              flex: 15,
+                                                              child: IconButton(
+                                                                icon: const Icon(Icons.remove, size: 48),
+                                                                tooltip: 'Diminue le nombre de ' + vehicle.acronym,
+                                                                onPressed: () {
+                                                                  setState(() {
+                                                                    if(vehicle.nbOfUnit >0) {
+                                                                      vehicle.nbOfUnit -= 1;
+                                                                    }
+                                                                  });
+                                                                },
+                                                              ),
+                                                            )
+                                                          ]
+                                                      );
+                                                    },
+                                                    separatorBuilder: (BuildContext context, int index) =>
+                                                        Flex(
+                                                            direction: Axis.horizontal,
+                                                            children: const [
+                                                              Flexible(
+                                                                flex: 100,
+                                                                child: Divider(),
+                                                              ),
+                                                              Flexible(
+                                                                  flex: 10,
+                                                                  child: Padding(
+                                                                      padding: EdgeInsets.only(top: 32)
+                                                                  )
+                                                              )]
+                                                        ),
+                                                  )
+                                              )
+                                          )
+                                      ),
+                                      const Flexible(
+                                          flex: 10,
+                                          child: Padding(
+                                            padding: EdgeInsets.all(16),
+                                          )
+                                      ),
+                                    ]
                                 ),
-                              ]
-                          ),
-                          const Padding(
-                              padding: const EdgeInsets.all(8)
-                          ),
-                          Flex(
-                              direction: Axis.horizontal,
-                              children: [
-                                const Flexible(
-                                    flex: 10,
-                                    child: Padding(
-                                      padding: EdgeInsets.all(16),
-                                    )
+                                const Padding(
+                                    padding: const EdgeInsets.all(0)
                                 ),
-                                Flexible(
-                                    flex: 40,
-                                    child: TextFormField(
-                                        focusNode: textAddressFieldFocusNode,
-                                        controller: addressControler,
-                                        onFieldSubmitted: (term) {
-                                          _getPosition();
-                                          textAddressFieldFocusNode.unfocus();
-                                        },
-                                        decoration: const InputDecoration(
-                                          hintText: 'Adresse :    Numéro de rue,    rue,    ville',
-                                        ),
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            addressFormField = "";
-                                            return TEXT_REQUIRED;
-                                          } else {
-                                            addressFormField = value;
-                                          }
-                                          return null;
-                                        })
+                                Flex(
+                                    direction: Axis.horizontal,
+                                    children: [
+                                      const Flexible(
+                                          flex: 10,
+                                          child: Padding(
+                                            padding: EdgeInsets.all(16),
+                                          )
+                                      ),
+                                      Flexible(
+                                          flex: 40,
+                                          child: TextFormField(
+                                              focusNode: textAddressFieldFocusNode,
+                                              controller: addressControler,
+                                              onFieldSubmitted: (term) {
+                                                _getPosition();
+                                                textAddressFieldFocusNode.unfocus();
+                                              },
+                                              decoration: const InputDecoration(
+                                                hintText: 'Adresse :    Numéro de rue,    rue,    ville',
+                                              ),
+                                              validator: (value) {
+                                                if (value == null || value.isEmpty) {
+                                                  addressFormField = "";
+                                                  return TEXT_REQUIRED;
+                                                } else {
+                                                  addressFormField = value;
+                                                }
+                                                return null;
+                                              })
+                                      ),
+                                    ]
                                 ),
-                              ]
-                          ),
-                          const Padding(
-                              padding: EdgeInsets.all(16),
-                          ),
-                          Flex(
-                            direction: Axis.horizontal,
-                            children: [
-                              Flexible(
-                                  flex: 15,
-                                  fit: FlexFit.tight,
-                                  child: Container()
-                              ),
-                              Flexible(
-                                  flex: 40,
-                                  fit: FlexFit.tight,
-                                  child: !isMarked ?
-                                    Text("Sélectionnez une addresse pour placer un marqueur.") :
-                                      Text("Précisez l'emplacement de l'intervention si nécessaire.")
-                              ),
-                              Flexible(
-                                  flex: 10,
-                                  fit: FlexFit.tight,
-                                  child: Container()
-                              )
-                            ],
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.all(16),
-                          ),
-                          Flex(
-                            direction: Axis.horizontal,
-                            children: [
-                              Flexible(
-                                  flex: 30,
-                                  fit: FlexFit.tight,
-                                  child: Container()
-                              ),
-                              Flexible(
-                                  flex: 40,
-                                  fit: FlexFit.tight,
-                                  child: TextButton(
-                                    style: TextButton.styleFrom(
-                                      backgroundColor: _isSubmitButtonDisabled() ? Colors.grey : Colors.deepOrange,
-                                      primary: Colors.white,
+                                const Padding(
+                                    padding: EdgeInsets.all(16),
+                                ),
+                                Flex(
+                                  direction: Axis.horizontal,
+                                  children: [
+                                    Flexible(
+                                        flex: 15,
+                                        fit: FlexFit.tight,
+                                        child: Container()
                                     ),
-                                    onPressed: () {
-                                      if (!_isSubmitButtonDisabled()) {
-                                        submitForm();
-                                      }
-                                    },
-                                    child: Text('Créer'),
-                                  )
-                              ),
-                              Flexible(
-                                  flex: 30,
-                                  fit: FlexFit.tight,
-                                  child: Container()
-                              )
-                            ],
+                                    Flexible(
+                                        flex: 40,
+                                        fit: FlexFit.tight,
+                                        child: !isMarked ?
+                                          Text("Sélectionnez une addresse pour placer un marqueur.") :
+                                            Text("Précisez l'emplacement de l'intervention si nécessaire.")
+                                    ),
+                                    Flexible(
+                                        flex: 10,
+                                        fit: FlexFit.tight,
+                                        child: Container()
+                                    )
+                                  ],
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.all(8),
+                                ),
+                                Flex(
+                                  direction: Axis.horizontal,
+                                  children: [
+                                    Flexible(
+                                        flex: 30,
+                                        fit: FlexFit.tight,
+                                        child: Container()
+                                    ),
+                                    Flexible(
+                                        flex: 40,
+                                        fit: FlexFit.tight,
+                                        child: TextButton(
+                                          style: TextButton.styleFrom(
+                                            backgroundColor: _isSubmitButtonDisabled() ? Colors.grey : Colors.deepOrange,
+                                            primary: Colors.white,
+                                          ),
+                                          onPressed: () {
+                                            if (!_isSubmitButtonDisabled()) {
+                                              submitForm();
+                                            }
+                                          },
+                                          child: const Text('Créer'),
+                                        )
+                                    ),
+                                    Flexible(
+                                        flex: 30,
+                                        fit: FlexFit.tight,
+                                        child: Container()
+                                    )
+                                  ],
+                                )
+                              ]
                           )
-                        ]
-                    )
-                )
-            )
-        )
-    );
+                      )
+                  )
+              )
+          ); }
+        else {
+          return const LoadingPage();
+        }
+        });
   }
 
   Widget getMapWidget() {

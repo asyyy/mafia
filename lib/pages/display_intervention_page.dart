@@ -198,13 +198,12 @@ class _DisplayInterventionState extends State<DisplayIntervention> {
         iconId: 0);
     VehicleModel vm = VehicleModel(
         id: Random().nextInt(9999999).toString(),
-        type: marker_values["type"],
         validationState: "6276c236c6a97a0c672aa10a",
         departureDate: "2022-02-24",
         arrivedDateEst: "2022-02-24",
         arrivedDateReal: "2022-02-24",
         interventionId: intervention.id,
-        iconModel: im);
+        iconModel: im, sinisterType: 'INC', name: '', vehicleType: 'FMGP');
 
     // Simulate push on API
     apiEmulator.addVehicle(vm).then((value) => {
@@ -696,7 +695,7 @@ class _DisplayInterventionState extends State<DisplayIntervention> {
                     id: "",
                     label: "",
                     startDate: "",
-                    endDate: "", labelAddress: '', sinisterType: 1, latitude: '', longitude: '',);
+                    endDate: "", labelAddress: '', sinisterType: "INC", latitude: '', longitude: '',);
             return Flex(
               direction: Axis.horizontal,
               children: [

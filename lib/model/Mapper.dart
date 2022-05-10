@@ -9,37 +9,38 @@ class Mapper {
   Map<String, String> vehiclesTypes = {};
   Map<String, String> sinisterTypes = {};
 
-  fillMapper(dynamic value, Map<String, String> map) {
+  fillMapper(dynamic value, Map<String, String> map) async {
     for (var object in json.decode(value.body)) {
-      map.putIfAbsent(object['libelle'], () => object['_id']);
+      print("object " + object.toString());
+      map.putIfAbsent(object['libelle'], () => object['libelle']);
     }
-    sinisterTypes.forEach((key, value) {
-      print("Key is " + key + ' | Value is ' + value);
-    });
   }
 
-  findValidationVehiclesByKey(String id) {
+  String findValidationVehiclesByKey(String id) {
     validationsVehicles.keys.firstWhere(
-        (element) => validationsVehicles[element] == id,
+        (element) => element == id,
         orElse: () => 'Id not found');
+    return 'Id not found';
   }
 
-  findVehicleTypeByKey(String id) {
-    vehiclesTypes.keys.firstWhere((element) => vehiclesTypes[element] == id,
+  String findVehicleTypeByKey(String id) {
+    vehiclesTypes.keys.firstWhere((element) => element == id,
         orElse: () => 'Id not found');
+    return 'Id not found';
   }
 
-  findSinisterTypeByKey(String id) {
-    sinisterTypes.keys.firstWhere((element) => sinisterTypes[element] == id,
+  String findSinisterTypeByKey(String id) {
+    sinisterTypes.keys.firstWhere((element) => element == id,
         orElse: () => 'Id not found');
+    return 'Id not found';
   }
 
   Mapper() {
     MapperService.getVehiclesType().then(
-        (value) => {print("vehiclesTypes"), fillMapper(value, vehiclesTypes)});
+        (value) => {fillMapper(value, vehiclesTypes)});
     MapperService.getValidationsVehicles().then((value) =>
-        {print("ValidationVehicles"), fillMapper(value, validationsVehicles)});
+        {fillMapper(value, validationsVehicles)});
     MapperService.getSinisterType().then(
-        (value) => {print("SinisterType"), fillMapper(value, sinisterTypes)});
+        (value) => {fillMapper(value, sinisterTypes)});
   }
 }
