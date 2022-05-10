@@ -18,6 +18,22 @@ class Mapper {
     });
   }
 
+  findValidationVehiclesByKey(String id) {
+    validationsVehicles.keys.firstWhere(
+        (element) => validationsVehicles[element] == id,
+        orElse: () => 'Id not found');
+  }
+
+  findVehicleTypeByKey(String id) {
+    vehiclesTypes.keys.firstWhere((element) => vehiclesTypes[element] == id,
+        orElse: () => 'Id not found');
+  }
+
+  findSinisterTypeByKey(String id) {
+    sinisterTypes.keys.firstWhere((element) => sinisterTypes[element] == id,
+        orElse: () => 'Id not found');
+  }
+
   Mapper() {
     MapperService.getVehiclesType().then(
         (value) => {print("vehiclesTypes"), fillMapper(value, vehiclesTypes)});
