@@ -52,11 +52,11 @@ class ApiService {
     return tmpResult;
   }
 
-  static Future<bool> updateIntervention(InterventionModel intervention) async {
+  /*static Future<bool> updateIntervention(InterventionModel intervention) async {
     bool tmpResult = false;
     await http
         .put(
-      Uri.parse(ApiUrl + "/" + ApiCollection + "/" + intervention.id),
+      Uri.parse(ApiUrl + "/" + ApiCollection + "/" + intervention!.id),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'token': globals.token
@@ -85,7 +85,7 @@ class ApiService {
       tmpResult = false;
     });
     return tmpResult;
-  }
+  }*/
 
 // Fonction de login, a brancher au front
 // Return '' si la connexion est bonne, et update le token global
@@ -170,7 +170,7 @@ class ApiService {
     return tmpResult;
   }
 
-  static Future<String> postVehicule(VehicleModel vehicule) async {
+ /* static Future<String> postVehicule(VehicleModel vehicule) async {
     String tmpResult = "";
     await http
         .post(
@@ -192,5 +192,5 @@ class ApiService {
       tmpResult = "Erreur lors de la création de l'intervention";
     });
     return tmpResult;
-  }
+  }*/
 }

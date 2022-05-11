@@ -11,25 +11,36 @@ class IconModel {
       required this.label,
       required this.latitude,
       required this.longitude,
-      required this.color,
-      required this.iconId});
-  double orientation;
-  double size;
+      this.id,
+      this.color});
+  int orientation;
+  int size;
   String label;
   double latitude;
   double longitude;
-  Color color;
-  int iconId;
+  Color? color;
+  String? id;
 
-  Map<String, dynamic> toJson() => {
-        "orientation": orientation,
-        "size": size,
-        "latitude": latitude,
-        "longitude": longitude,
-        "label": label,
-        "color": color,
-        "iconId": iconId
-      };
+  factory IconModel.fromJson(Map<String, dynamic> json) => IconModel(
+      id: json["_id"] ?? 'No id',
+      orientation: json["orientation"],
+      size: json["size"],
+      label: json["label"],
+      longitude: double.parse(json["longitude"]),
+      latitude: double.parse(json["latitude"]));
+
+  Map<String, dynamic> toJson() {
+    Map<String, dynamic> json = {};
+    if (id != null) json.putIfAbsent('_id', () => id);
+    if (color != null) json.putIfAbsent('color', () => color);
+    json.putIfAbsent('orientation', () => orientation);
+    json.putIfAbsent('size', () => size);
+    json.putIfAbsent('latitude', () => latitude);
+    json.putIfAbsent('longitude', () => longitude);
+    json.putIfAbsent('label', () => label);
+
+    return json;
+  }
 
   /// Get marker of Vehicle
   Marker getMarker({listener}) {
@@ -38,8 +49,8 @@ class IconModel {
 
     return Marker(
       rotate: true,
-      width: size,
-      height: size,
+      width: size.toDouble(),
+      height: size.toDouble(),
       point: getPosition(),
       builder: (ctx) => GestureDetector(
         onTap: () {
@@ -48,30 +59,17 @@ class IconModel {
             listener(this);
           }
         },
-        child: Icon(icon, color: color, size: size),
+        child: Icon(icon, color: color, size: size.toDouble()),
       ),
     );
   }
 
-  @override
-  String toString() {
-    return "orientation : " +
-        orientation.toString() +
-        "\nsize : " +
-        size.toString() +
-        "\nlabel : " +
-        label +
-        "\nLatitude : " +
-        latitude.toString() +
-        "\nlongitude : " +
-        longitude.toString() +
-        "\ncolor : " +
-        color.toString() +
-        "\niconId : " +
-        iconId.toString();
-  }
-
   LatLng getPosition() {
     return LatLng(latitude, longitude);
+  }
+
+  @override
+  String toString() {
+    return 'IconModel{orientation: $orientation, size: $size, label: $label, latitude: $latitude, longitude: $longitude, color: $color, id: $id}';
   }
 }

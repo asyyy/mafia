@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:responsive/responsive.dart';
 import '../services/api_services.dart';
+import 'list_intervention_page.dart';
 
-import 'display_intervention_page.dart';
+
 
 ///
 /// Widget that allows login
@@ -110,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
                                                     context,
                                                     MaterialPageRoute(
                                                         builder: (_) =>
-                                                            const DisplayIntervention()))
+                                                            const ListIntervention()))
                                               }
                                             else
                                               {

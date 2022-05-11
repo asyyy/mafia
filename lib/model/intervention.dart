@@ -2,31 +2,34 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:projet_groupe_c/model/symbol.dart';
 import 'package:projet_groupe_c/model/polygon.dart';
-import 'package:projet_groupe_c/model/vehicles.dart';
+import 'package:projet_groupe_c/model/vehicle.dart';
 
 class InterventionModel {
 
+
   /// Implementation of an intervention
   InterventionModel(
-      {id,
-      required this.labelAddress,
+      {
       required this.label,
       required this.startDate,
-      endDate,
-       required this.sinisterType,
       required this.longitude,
-      required this.latitude});
-  late String id;
+      required this.latitude,
+      required this.sinisterTypeId,
+      required this.labelAddress,
+      this.endDate,
+      this.id}){
+  }
+  String? id;
   String label;
   String startDate;
+  String? endDate;
+  int sinisterTypeId;
+  String labelAddress;
   List<VehicleModel> vehicles = [];
   List<SymbolModel> symbols = [];
   List<PolygonModel> polygons = [];
-  String endDate = "";
-  String longitude;
-  String latitude;
-  String labelAddress;
-  String sinisterType;
+  double longitude;
+  double latitude;
 
   /// Create InterventionModel from JSON
   factory InterventionModel.fromJson(Map<String, dynamic> json) =>
@@ -35,53 +38,32 @@ class InterventionModel {
           label: json['label'],
           startDate: json['startDate'],
           endDate: json['endDate'],
+          sinisterTypeId: json['sinisterTypeId'],
           labelAddress: json['labelAddress'],
-          sinisterType: json['sinisterType'],
-          longitude: json['longitude'],
-          latitude: json['latitude']);
+          longitude: double.parse(json['longitude']),
+          latitude: double.parse(json['latitude']));
 
   /// Export InterventionModel as JSON
-  Map<String, dynamic> toJson() => {
-        "label": label,
-        "startDate": startDate,
-        "labelAddress": labelAddress,
-        "sinisterType": sinisterType,
-        "endDate": endDate,
-        "vehicles": vehiclesToJson(),
-        "symboles": symbolToJson(),
-        "polygon": polygonToJson(),
-        "longitude": longitude,
-        "latitude": latitude,
-      };
-
-  List<Map<String, dynamic>> vehiclesToJson() {
-    return List.generate(
-        vehicles.length, (index) => vehicles[index].toJson());
+  Map<String, dynamic> toJson(){
+    Map<String, dynamic> json = {};
+    if(id != null) json.putIfAbsent('_id', () => id);
+    if(endDate != null) json.putIfAbsent('endDate', () => endDate);
+    json.putIfAbsent('label', () => label);
+    json.putIfAbsent('startDate', () => startDate);
+    json.putIfAbsent('longitude', () => longitude.toString());
+    json.putIfAbsent('latitude', () => latitude.toString());
+    json.putIfAbsent('sinisterTypeId', () => sinisterTypeId);
+    json.putIfAbsent('labelAddress', () => labelAddress);
+    
+    return json;
   }
 
-  List<Map<String, dynamic>> symbolToJson() {
-    return List.generate(symbols.length, (index) => symbols[index].toJson());
-  }
-
-  List<Map<String, dynamic>> polygonToJson() {
-    return List.generate(
-        polygons.length, (index) => polygons[index].toJson());
-  }
-
-  /// Return InterventionModel as String
-  String vehiclesToString() {
-    var vToS = "";
-    for (VehicleModel v in vehicles) {
-      vToS += v.toString();
-    }
-    return vToS;
-  }
 
   /// Get list of markers for each vehicles
   List<Marker> getVehiclesMarkers({listener}) {
     List<Marker> markers = [];
     for (VehicleModel v in vehicles) {
-      markers.add(v.iconModel.getMarker(listener: listener));
+      markers.add(v.icon!.getMarker(listener: listener));
     }
     return markers;
   }
@@ -106,7 +88,7 @@ class InterventionModel {
 
   /// Get position of intervention
   LatLng getposition() {
-    return LatLng(double.parse(latitude), double.parse(longitude));
+    return LatLng(latitude, longitude);
   }
 
   List<Marker> getAllMarkers({listener}) {
@@ -114,5 +96,10 @@ class InterventionModel {
     allMarkers.addAll(getVehiclesMarkers(listener: listener));
     allMarkers.addAll(getSymbolsMarkers(listener: listener));
     return allMarkers;
+  }
+
+  @override
+  String toString() {
+    return 'InterventionModel{id: $id, label: $label, startDate: $startDate, endDate: $endDate, sinisterTypeId: $sinisterTypeId, labelAddress: $labelAddress, vehicles: $vehicles, symbols: $symbols, polygons: $polygons, longitude: $longitude, latitude: $latitude}';
   }
 }

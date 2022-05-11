@@ -5,7 +5,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:projet_groupe_c/assets/constants.dart';
-import 'package:projet_groupe_c/model/Mapper.dart';
 import 'package:projet_groupe_c/model/disasterCode.dart';
 import 'package:projet_groupe_c/model/iconModel.dart';
 import 'package:projet_groupe_c/model/intervention.dart';
@@ -13,11 +12,14 @@ import 'package:projet_groupe_c/pages/error_page.dart';
 import 'package:projet_groupe_c/pages/loading_page.dart';
 import 'dart:developer';
 import 'package:projet_groupe_c/services/geoloc_services.dart';
-import 'package:projet_groupe_c/services/mapper_service.dart';
+import 'package:projet_groupe_c/services/vehicle.service.dart';
 
+import '../model/Mapper.dart';
+import '../model/vehicle.dart';
 import '../model/vehicles.dart';
 import '../services/api_services.dart' as service;
 import '../services/interventions_service.dart';
+import '../services/mapper_service.dart';
 
 ///
 /// Widget that allows create new intervention
@@ -60,7 +62,7 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
   List<DisasterCodeModel> disasterModelList = [];//Disaster Code List
 
   List<VehiclesUtils> vehicles = [];
-  Map<String, String> vehicleType = {};
+  Map<String, int> vehicleType = {};
 
   double latitude = 48.117266;
   double longitude = -1.6777926;
@@ -75,6 +77,8 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
   String addressFormField = "";
   String labelFormField = "";
   LatLng positionFormField = LatLng(48.117266, -1.6777926);
+  InterventionService interventionService = InterventionService();
+  VehicleService vehicleService = VehicleService();
 
   @override
   initState(){
@@ -110,8 +114,8 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
 
   submitForm() async {
 
-    String latitude = positionFormField.latitude.toString();
-    String longitude = positionFormField.longitude.toString();
+    double latitude = positionFormField.latitude;
+    double longitude = positionFormField.longitude;
     String dateNow = DateTime.now().toIso8601String();
     String dateArrivedEstimated = DateTime.now().add(const Duration(hours: 2)).toIso8601String();
 
@@ -122,57 +126,59 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
         startDate: dateNow,
         longitude: longitude,
         latitude: latitude,
-        sinisterType: sinisterTypeKey,
-        labelAddress: addressFormField
+        sinisterTypeId: 1,
+        labelAddress: addressFormField,
     );
 
+    InterventionModel? returnedIntervention = await interventionService.postIntervention(newIntervention);
+   /* var intervention = "";
+    await service.ApiService.postIntervention(newIntervention).then((value) => intervention = value);*/
 
-    var intervention = "";
-    await service.ApiService.postIntervention(newIntervention).then((value) => intervention = value);
-    Map<String, dynamic> mapIntervention = jsonDecode(intervention);
+    /*Map<String, dynamic> mapIntervention = jsonDecode(intervention);*/
 
-    newIntervention.id = mapIntervention["_id"];
+    /*newIntervention.id = mapIntervention["_id"];*/
 
     IconModel defaultIcon = IconModel(
-        orientation: 1.0,
-        size: 24.0,
+        orientation: 1,
+        size: 24,
         label: "label",
         latitude: positionFormField.latitude,
         longitude: positionFormField.longitude,
-        color: disasterModelList[_selectedDisasterCode].color,
-        iconId: 3
+        //color: disasterModelList[_selectedDisasterCode].color,
     );
 
 
     vehicles.forEach((element) async {
       while(element.nbOfUnit >= 1) {
 
-        String vehicleTypeIndex = mapper.findVehicleTypeByKey(element.acronym);
-        String validationState = mapper.findValidationVehiclesByKey("VALIDATED");
-        String sinisterTypeIndex = mapper.findSinisterTypeByKey(sinisterTypeKey);
+        int? vehicleTypeIndex = mapper.vehiclesTypes[element.acronym];
+        int? validationStateIndex = mapper.validationsVehicles['VALID'];
+        int? sinisterTypeIndex = mapper.sinisterTypes[sinisterTypeKey];
 
-        VehicleModel vehicleModel = VehicleModel(
+        VehicleModel newVehicle = VehicleModel(
             departureDate: dateNow,
-            name: element.acronym + " ",
-            validationState: validationState,
-            sinisterType: sinisterTypeIndex,
+            name: element.acronym + "TESTING FROM EMULATEUR" ,
+            validationStateId: validationStateIndex!,
+            sinisterTypeId: sinisterTypeIndex!,
             arrivedDateEst: dateArrivedEstimated,
-            interventionId: newIntervention.id,
-            iconModel: defaultIcon,
-            vehicleType: vehicleTypeIndex,
+            interventionId: returnedIntervention?.id,
+            icon: defaultIcon,
+            vehicleTypeId: vehicleTypeIndex!,
         );
-        var vehicle = "";
+        print("VEHICLE MODEL");
+        print(newVehicle.toString());
+        /*var vehicle = "";
 
-        await service.ApiService.postVehicule(vehicleModel).then((value) => vehicle = value); //post Vehicle
+        await service.ApiService.postVehicule(vehicleModel).then((value) => vehicle = value); //post Vehicle*/
+        await vehicleService.postVehicle(newVehicle);
 
-
-        Map<String, dynamic> mapVehicleModel = jsonDecode(vehicle);
+        //Map<String, dynamic> mapVehicleModel = jsonDecode(vehicle);
 
         ///TODO A MODIFIER UNE FOIS FIX!!!
         ///LE BAC NE RENVOIE PAS D'IconModel QUAND ON POST UN VEHICULE
-        mapVehicleModel["iconModel"] = "nothing";
+        //mapVehicleModel["iconModel"] = "nothing";
 
-        newIntervention.vehicles.add(VehicleModel.fromJson(mapVehicleModel));//transform vehicle string to Map<String, Dynamic> and to VehicleModel
+        //newIntervention.vehicles.add(VehicleModel.fromJson(mapVehicleModel));//transform vehicle string to Map<String, Dynamic> and to VehicleModel
 
         element.nbOfUnit -=1; //if everithing goes well, we've added a vehicle to intervention so we delete one from this list.
       }
@@ -283,11 +289,11 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
                           child: Column(
                               children: <Widget>[
                                 const Padding(
-                                    padding: const EdgeInsets.all(16)
+                                    padding: const EdgeInsets.all(1)
                                 ),
                                 Text("Nouvelle Intervention"),
                                 const Padding(
-                                    padding: const EdgeInsets.all(8)
+                                    padding: const EdgeInsets.all(1)
                                 ),
                                 Flex(
                                   direction: Axis.horizontal,
@@ -295,7 +301,7 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
                                     const Flexible(
                                         flex: 10,
                                         child: Padding(
-                                          padding: EdgeInsets.all(16),
+                                          padding: EdgeInsets.all(1),
                                         )
                                     ),
                                     Flexible(
@@ -319,7 +325,7 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
                                     const Flexible(
                                         flex: 10,
                                         child: Padding(
-                                          padding: EdgeInsets.all(16),
+                                          padding: EdgeInsets.all(1),
                                         )
                                     ),
                                     Flexible(
@@ -343,7 +349,7 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
                                       const Flexible(
                                           flex: 10,
                                           child: Padding(
-                                            padding: EdgeInsets.all(16),
+                                            padding: EdgeInsets.all(1),
                                           )
                                       ),
                                       Flexible(
@@ -415,7 +421,7 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
                                                               Flexible(
                                                                   flex: 10,
                                                                   child: Padding(
-                                                                      padding: EdgeInsets.only(top: 32)
+                                                                      padding: EdgeInsets.only(top: 1)
                                                                   )
                                                               )]
                                                         ),
@@ -533,7 +539,7 @@ class _NewInterventionPageState extends State<NewInterventionPage> {
               )
           ); }
         else {
-          return const LoadingPage();
+          return const LoadingPage(id: '',);
         }
         });
   }

@@ -6,9 +6,11 @@ import 'package:projet_groupe_c/model/iconModel.dart';
 import 'package:projet_groupe_c/model/vehicles.dart';
 import 'package:projet_groupe_c/pages/error_page.dart';
 import 'package:projet_groupe_c/pages/loading_page.dart';
+import 'package:projet_groupe_c/services/vehicle.service.dart';
 import 'dart:math';
 import '../model/intervention.dart';
 import '../model/symbol.dart';
+import '../model/vehicle.dart';
 import '../services/api_services_emulator.dart';
 
 ///
@@ -195,15 +197,16 @@ class _DisplayInterventionState extends State<DisplayIntervention> {
         latitude: tapHistory.last.latitude,
         longitude: tapHistory.last.longitude,
         color: Colors.red,
-        iconId: 0);
+        id: "0");
     VehicleModel vm = VehicleModel(
         id: Random().nextInt(9999999).toString(),
-        validationState: "6276c236c6a97a0c672aa10a",
+        //type: marker_values["type"],
+        validationStateId: 1,
         departureDate: "2022-02-24",
         arrivedDateEst: "2022-02-24",
         arrivedDateReal: "2022-02-24",
         interventionId: intervention.id,
-        iconModel: im, sinisterType: 'INC', name: '', vehicleType: 'FMGP');
+        icon: im, vehicleTypeId: 1, sinisterTypeId: 1, name: '');
 
     // Simulate push on API
     apiEmulator.addVehicle(vm).then((value) => {
@@ -229,10 +232,10 @@ class _DisplayInterventionState extends State<DisplayIntervention> {
         latitude: tapHistory.last.latitude,
         longitude: tapHistory.last.longitude,
         color: Color(0),
-        iconId: 0);
+        id: "0");
     SymbolModel vm = SymbolModel(
         id: Random().nextInt(9999999).toString(),
-        type: marker_values["type"],
+        sinisterTypeId: 1,
         interventionId: intervention.id,
         icon: im);
 
@@ -589,7 +592,7 @@ class _DisplayInterventionState extends State<DisplayIntervention> {
               toolbarHeight: 40,
               elevation: 0,
               title: Text((lastTappedElement is VehicleModel)
-                  ? (lastTappedElement as VehicleModel).iconModel.label
+                  ? (lastTappedElement as VehicleModel).icon!.label
                   : (lastTappedElement is SymbolModel)
                       ? (lastTappedElement as SymbolModel).icon.label
                       : "No label"),
@@ -651,7 +654,7 @@ class _DisplayInterventionState extends State<DisplayIntervention> {
                   })
                 },
                 initialValue: (lastTappedElement is VehicleModel)
-                    ? (lastTappedElement as VehicleModel).iconModel.label
+                    ? (lastTappedElement as VehicleModel).icon?.label
                     : (lastTappedElement is SymbolModel)
                         ? (lastTappedElement as SymbolModel).icon.label
                         : "",
@@ -695,7 +698,10 @@ class _DisplayInterventionState extends State<DisplayIntervention> {
                     id: "",
                     label: "",
                     startDate: "",
-                    endDate: "", labelAddress: '', sinisterType: "INC", latitude: '', longitude: '',);
+                    endDate: "",
+                    longitude: 0.0,
+                    latitude: 0.0,
+                    sinisterTypeId: 1,labelAddress: '');
             return Flex(
               direction: Axis.horizontal,
               children: [
@@ -855,7 +861,7 @@ class _DisplayInterventionState extends State<DisplayIntervention> {
           } else if (snapshot.hasError) {
             return ErrorPage();
           } else {
-            return LoadingPage();
+            return LoadingPage(id: '',);
           }
         });
   }

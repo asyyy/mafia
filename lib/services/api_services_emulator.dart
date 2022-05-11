@@ -1,5 +1,5 @@
 import 'package:projet_groupe_c/model/intervention.dart';
-import 'package:projet_groupe_c/model/vehicles.dart';
+import 'package:projet_groupe_c/model/vehicle.dart';
 
 import '../model/symbol.dart';
 
@@ -9,10 +9,8 @@ class ApiServiceEmulator {
       label: "Feu Capgemini Rennes",
       startDate: "10-04-2022",
       endDate: "10-04-2022",
-      longitude: "-1.6777926",
-      latitude: "48.117266",
-      labelAddress: 'test',
-      sinisterType: 'INC');
+      longitude: -1.6777926,
+      latitude: 48.117266, labelAddress: '', sinisterTypeId: 1);
 
   Future<InterventionModel> getInterventionById() async {
     return Future.delayed(Duration(milliseconds: 500))
